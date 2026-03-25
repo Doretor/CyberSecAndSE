@@ -1,1 +1,2 @@
-grep ERROR ../logs/*.log > ../reports/all_errors.txt
+#!/bin/bash
+cat ../logs/*.log | grep "ERROR" > ../reports/all_errors.txt
