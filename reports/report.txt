@@ -1,0 +1,21 @@
+Logs Analize
+sat-001-backup.log:
+All lines: 3
+INFO: 1
+WARN: 1
+ERROR: 1
+sat-001.log:
+All lines: 140
+INFO: 106
+WARN: 25
+ERROR: 9
+sat-002.log:
+All lines: 140
+INFO: 103
+WARN: 23
+ERROR: 14
+sat-003.log:
+All lines: 140
+INFO: 130
+WARN: 10
+ERROR: 0
