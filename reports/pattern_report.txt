@@ -1,0 +1,9 @@
+Logs Analize
+sat-001-backup.log:
+ERROR: 1
+sat-001.log:
+ERROR: 9
+sat-002.log:
+ERROR: 14
+sat-003.log:
+ERROR: 0
