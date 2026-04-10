@@ -1,0 +1,7 @@
+MISSION REPORT
+Processed files: 4
+Total entries: 423
+INFO: 340
+WARN: 59
+ERROR: 24
+Most unstable log: sat-002.log
