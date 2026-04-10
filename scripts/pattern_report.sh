@@ -1,23 +1,17 @@
 #!/bin/bash
 
-if [ -z "$1" ]
-then
-        echo "Missing argument: search pattern"
-        exit -1
+if [ -z "$1" ]; then
+    echo "Missing argument: search pattern (e.g. INFO, WARN, ERROR)"
+    exit 1
 fi
 
-FILE=""
-PATT=$1
+PATT="$1"
+REPORT_FILE="../reports/pattern_report.txt"
 
-count_patt() {
-        echo "$PATT: $(grep $PATT $FILE | wc -l)" >> ../reports/pattern_report.txt
-}
+echo "PATTERN REPORT: $PATT" > "$REPORT_FILE"
 
-echo "Logs Analize" > ../reports/pattern_report.txt
-for file in ../logs/*.log
-do
-        FILE=$file
-        echo "$(basename $file | cut -d '/' -f3):" >> ../reports/pattern_report.txt
-        count_patt
-
+for file in ../logs/*.log; do
+    filename=$(basename "$file")
+    count=$(grep "$PATT" "$file" | wc -l)
+    echo "$filename: $count" >> "$REPORT_FILE"
 done
