@@ -1,0 +1,17 @@
+Task 11:
+
+nmap -Pn -F 10.0.2.2
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2026-04-25 11:16 CEST
+Nmap scan report for _gateway (10.0.2.2)
+Host is up (0.0014s latency).
+Not shown: 98 filtered tcp ports (no-response)
+PORT    STATE SERVICE
+135/tcp open  msrpc
+445/tcp open  microsoft-ds
+
+The nmap scan of the gateway at 10.0.2.2 revealed open ports 135 (MSRPC) and 445 (SMB), 
+which are typical for Windows-based communication and file-sharing services. 
+These results indicate that the host machine is exposing its internal services to the virtualized environment, 
+creating a potential bridge between the guest and host systems. 
+From a security perspective, these ports could be exploited as vectors for lateral movement or VM escape attempts 
+if the host system is not properly patched or secured.
