@@ -1,0 +1,63 @@
+Task 1:
+[SENT] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:28+02:00;VALUE=45
+[SENT] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:30+02:00;VALUE=8
+[SENT] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:32+02:00;VALUE=67
+[SENT] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:34+02:00;VALUE=56
+[SENT] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:36+02:00;VALUE=95
+
+[RECEIVED 2026-04-28T12:05:28+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:28+02:00;VALUE=45
+[RECEIVED 2026-04-28T12:05:30+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:30+02:00;VALUE=8
+[RECEIVED 2026-04-28T12:05:32+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:32+02:00;VALUE=67
+[RECEIVED 2026-04-28T12:05:34+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:34+02:00;VALUE=56
+[RECEIVED 2026-04-28T12:05:36+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:05:36+02:00;VALUE=95
+
+<MES_DATE> <SAT_ID> <OBS_DATE> <VALUE>
+
+Task 2:
+sudo tcpdump -i lo -A tcp port 5000
+
+12:15:10.222520 IP localhost.5000 > localhost.44492: Flags [.], ack 61, win 64, options [nop,nop,TS val 1242688821 ecr 1242688821], length 0
+E..4rD@.@..}............TI..}.1....@.(.....
+J..5J..5
+12:15:10.222539 IP localhost.44492 > localhost.5000: Flags [F.], seq 61, ack 1, win 64, options [nop,nop,TS val 1242688821 ecr 1242688821], length 0
+E..4..@.@../............}.1.TI.....@.(.....
+J..5J..5
+12:15:10.222665 IP localhost.5000 > localhost.44492: Flags [F.], seq 1, ack 62, win 64, options [nop,nop,TS val 1242688821 ecr 1242688821], length 0
+E..4rE@.@..|............TI..}.1....@.(.....
+J..5J..5
+12:15:10.222708 IP localhost.44492 > localhost.5000: Flags [.], ack 2, win 64, options [nop,nop,TS val 1242688821 ecr 1242688821], length 0
+E..4..@.@...............}.1.TI.....@.(.....
+J..5J..5
+12:15:12.232863 IP localhost.44500 > localhost.5000: Flags [S], seq 1075535976, win 65495, options [mss 65495,sackOK,TS val 1242690831 ecr 0,nop,wscale 10], length 0
+E..<..@.@..	............@.`h.........0.........
+J..........
+
+12:15:12.232901 IP localhost.5000 > localhost.44500: Flags [S.], seq 3524786230, ack 1075535977, win 65483, options [mss 65495,sackOK,TS val 1242690831 ecr 1242690831,nop,wscale 10], length 0
+E..<..@.@.<................6@.`i.....0.........
+J...J......
+
+12:15:12.232949 IP localhost.44500 > localhost.5000: Flags [.], ack 1, win 64, options [nop,nop,TS val 1242690832 ecr 1242690831], length 0
+E..4..@.@...............@.`i...7...@.(.....
+J...J...
+12:15:12.233054 IP localhost.44500 > localhost.5000: Flags [P.], seq 1:60, ack 1, win 64, options [nop,nop,TS val 1242690832 ecr 1242690831], length 59
+E..o..@.@...............@.`i...7...@.c.....
+J...J...SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:15:12+02:00;VALUE=7
+
+Task 3:
+echo "SAT_ID=sat-001;TIMESTAMP=$(date -Iseconds);VALUE=9999" | nc -q 0 127.0.0.1 5000
+
+[RECEIVED 2026-04-28T12:22:44+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:22:44+02:00;VALUE=35
+[RECEIVED 2026-04-28T12:22:45+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:22:45+02:00;VALUE=9999
+[RECEIVED 2026-04-28T12:22:46+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:22:46+02:00;VALUE=21
+
+[SENT] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:22:44+02:00;VALUE=35
+[SENT] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:22:46+02:00;VALUE=21
+
+echo "SAT_ID=sat-002;TIMESTAMP=$(date -Iseconds);VALUE=-100" | nc -q 0 127.0.0.1 5000
+
+RECEIVED 2026-04-28T12:24:39+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:24:39+02:00;VALUE=82
+[RECEIVED 2026-04-28T12:24:39+02:00] SAT_ID=sat-002;TIMESTAMP=2026-04-28T12:24:39+02:00;VALUE=-100
+[RECEIVED 2026-04-28T12:24:41+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:24:41+02:00;VALUE=70
+
+[SENT] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:24:39+02:00;VALUE=82
+[SENT] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:24:41+02:00;VALUE=70
