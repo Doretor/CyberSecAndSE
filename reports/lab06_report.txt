@@ -69,8 +69,33 @@ Task 4:
 [ACCEPTED 2026-04-28T12:44:47+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:44:47+02:00;VALUE=46
 
 Task 5:
-sudo tcpdump -i lo -A tcp port 5001
 
-[ACCEPTED 2026-04-28T12:59:12+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:58:24+02:00;VALUE=25
-[ACCEPTED 2026-04-28T12:59:12+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:58:24+02:00;VALUE=25
-[ACCEPTED 2026-04-28T12:59:13+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-28T12:58:24+02:00;VALUE=25
+[ACCEPTED 2026-04-30T14:43:43+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-30T14:43:43+02:00;VALUE=33
+[REJECTED] REPLAY DETECTED: SAT_ID=sat-001;TIMESTAMP=2026-04-30T14:43:43+02:00;VALUE=33
+[ACCEPTED 2026-04-30T14:44:47+02:00] SAT_ID=sat-001;TIMESTAMP=2026-04-30T14:44:47+02:00;VALUE=18
+
+FINAL REFLECTION:
+What was possible in the insecure telemetry channel?
+In the unsafe connection, a hacker could easily read our data. They could also secretly change the numbers while they were traveling through the network, 
+or pretend to be the satellite and send fake information to the server.
+
+Which attacks were blocked by HMAC?
+HMAC stopped hackers from changing the data and sending fake messages. Because the hacker doesn't know the secret password (key), 
+they can't change the text or create new messages without ruining the signature. If the signature is wrong, the server simply ignores the message.
+
+Which attacks were still possible after adding HMAC?
+Even with HMAC, someone could still read our data because it was sent as normal text. 
+Also, replay attacks were still possible—a hacker could just copy a good, signed message and send it again later to confuse the system.
+
+Why was replay protection needed as a separate mechanism?
+HMAC only checks if the message is real and hasn't been changed. It doesn't check *when* the message was made. 
+We needed a new rule to check the time and remember older messages, so the server wouldn't accept the same message two times.
+
+Why does this laboratory still not provide confidentiality?
+This lab didn't use any encryption. HMAC only makes sure the message is from the right sender and hasn't been modified. 
+The actual information (like the temperature values) is still sent as normal text, so anyone watching the network can still read it.
+
+What additional protections would be needed for the command channel?
+First, we would need to encrypt the data to hide the commands so no one else can read them. 
+Second, we should use message numbers (counters) instead of checking the time. 
+This is because we might need to send a few commands very fast in the exact same second, and a simple time check would block them.
