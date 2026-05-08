@@ -1,0 +1,62 @@
+TASK 9 (VARIANT A): INTERFACE ISOLATION
+
+1. Final tunnel configuration:
+The tunnel was configured using the following socat command:
+socat openssl-listen:7005,bind=127.0.0.1,cert=../credentials/tls/orion.pem,verify=0,fork tcp4:127.0.0.1:6005
+
+2. Which interface is exposed:
+The `bind=127.0.0.1` parameter ensures that the TLS tunnel on port 7005 is exposed ONLY on the local loopback interface. 
+By checking with `ss -ltnp`, we can verify that the listener is bound strictly to `127.0.0.1:7005` rather than `0.0.0.0:7005` 
+(which would mean all interfaces). 
+
+3. Why reducing network exposure improves security:
+If a service listens on all interfaces (`0.0.0.0`), anyone on the local network (or even the internet, 
+if port forwarding is configured) can attempt to connect to it. By binding the service strictly to `127.0.0.1`, 
+we drastically reduce the attack surface. Only processes running on the exact same physical or virtual machine can even see that port 7005 is open. 
+It acts as an unbreakable, network-level firewall.
+
+4. When binding only to localhost may be insufficient in a real mission environment:
+In a real space mission, Mission Control (the operators sending commands) and the satellite ground station (the receiver) 
+are almost never the same physical machine. Therefore, binding only to `localhost` would completely break the command channel, 
+as remote operators wouldn't be able to connect. In reality, the service must listen on an external interface, 
+but it must be heavily protected using Virtual Private Networks (VPNs), strict IP whitelisting (firewalls), 
+and Mutual TLS (mTLS) to ensure only authorized endpoints can communicate.
+
+FINAL REFLECTION
+
+1. What was possible in the insecure command channel?
+Anyone could send commands to the satellite. A hacker could easily read the messages, change them, 
+or send completely fake commands (like SHUTDOWN) because the server trusted everyone and checked nothing.
+
+2. Which attacks were blocked by authorization?
+It stopped users with low permissions (like normal operators) from running dangerous admin commands. 
+
+3. Which attacks were blocked by authentication?
+It stopped unknown strangers from logging in. It also stopped users from lying about who they are 
+(for example, Alice couldn't pretend to be an admin, because her password only matched the operator role).
+
+4. Which attacks were blocked by HMAC?
+It stopped hackers from changing the message text or creating fake messages. Because the hacker doesn't know the secret password, 
+they can't create the mathematical signature. If the signature is missing or wrong, the server rejects the message.
+
+5. Which attacks were blocked by replay protection?
+It stopped hackers from copying a valid, old command and sending it again. Thanks to the unique COMMAND_ID, 
+the server remembers what it already processed and ignores duplicates.
+
+6. Why was a safety gate needed for critical commands?
+To prevent human errors and accidents. Even a real, logged-in admin can make a mistake and type the wrong command. 
+The safety gate forces them to stop, read the warning, and confirm the action before the satellite actually turns off.
+
+7. Why does HMAC not provide confidentiality?
+HMAC only creates a signature at the end of the message to prove it is real. 
+The message itself (like the user name or the command) is still sent as normal, readable text. 
+Anyone watching the network can still read it.
+
+8. Why does TLS not replace command authorization?
+TLS only creates a safe, hidden tunnel for the data so no one outside can read it. But once the message leaves the tunnel, 
+the server still needs to know if the person sending the command actually has the right permissions to do it. 
+TLS secures the road, but authorization checks the driver's license.
+
+9. What additional protections would be required in a real command channel?
+In a real space mission, both the satellite and the ground station should have to prove who they are before they even start talking. 
+Also, passwords and secret keys should be changed very often and kept in physically safe microchips so they cannot be stolen.
