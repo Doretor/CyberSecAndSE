@@ -2,7 +2,7 @@
 
 PORT=6003
 REPORT_DIR="../reports"
-LOG_FILE="$REPORT_DIR/command_authorization.log"
+LOG_FILE="$REPORT_DIR/command_hmac_authorization.log"
 
 mkdir -p "$REPORT_DIR"
 touch "$LOG_FILE"

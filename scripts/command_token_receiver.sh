@@ -2,7 +2,7 @@
 
 PORT=6002
 REPORT_DIR="../reports"
-LOG_FILE="$REPORT_DIR/command_authorization.log"
+LOG_FILE="$REPORT_DIR/command_token_authorization.log"
 
 mkdir -p "$REPORT_DIR"
 touch "$LOG_FILE"
