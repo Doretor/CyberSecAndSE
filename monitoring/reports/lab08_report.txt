@@ -1,0 +1,63 @@
+Challenge 1:
+
+docker stats
+
+CONTAINER ID   NAME                CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O     PIDS 
+cee48c86bab8   otel-collector      0.11%     35.86MiB / 31.11GiB   0.11%     40kB / 16.6kB     0B / 0B       21 
+74a5c0aed02c   promtail            0.95%     26.39MiB / 31.11GiB   0.08%     29.9kB / 212kB    0B / 127kB    17 
+a321442dfb38   telemetry-service   0.38%     1.914MiB / 31.11GiB   0.01%     9.91kB / 126B     0B / 0B       2 
+3607b013d7fe   command-service     0.00%     952KiB / 31.11GiB     0.00%     3.01MB / 10.7kB   0B / 201kB    2 
+7be99d73681f   tempo               0.34%     28.43MiB / 31.11GiB   0.09%     9.87kB / 126B     0B / 24.6kB   24 
+fd417e62514b   prometheus          0.00%     19.27MiB / 31.11GiB   0.06%     26.4kB / 30.7kB   0B / 45.1kB   18 
+b63af497e9a5   grafana             1.00%     127MiB / 31.11GiB     0.40%     22.4MB / 95.6kB   0B / 124MB    47 
+8d19f828365a   loki                0.50%     43.11MiB / 31.11GiB   0.14%     222kB / 20.6kB    0B / 565kB    25
+
+Operators can mitigate this by manually killing the problematic process (e.g., using killall command) 
+or by setting strict CPU and memory limits in the docker-compose.yml file to prevent one container from crashing the host.
+
+Challenge 2:
+
+In Grafana: {job="docker"} |= "admin"
+
+2026-05-26 13:07:44.572 {
+  "log": "USER=intruder;ROLE=admin;CMD=SHUTDOWN\n",
+  "stream": "stdout",
+  "time": "2026-05-26T11:07:44.539435236Z"
+} 
+
+2026-05-26 13:07:44.572 {
+  "log": "USER=intruder;ROLE=admin;CMD=SHUTDOWN\n",
+  "stream": "stdout",
+  "time": "2026-05-26T11:07:44.331149428Z"
+} 
+
+2026-05-26 13:07:44.321 {
+  "log": "USER=intruder;ROLE=admin;CMD=SHUTDOWN\n",
+  "stream": "stdout",
+  "time": "2026-05-26T11:07:44.122327246Z"
+}
+
+Repeated malicious behavior occurred. 
+The logs show that the SHUTDOWN command was executed 20 times in a very short period (every 0.2 seconds). 
+This high frequency strongly indicates an automated script attack or a brute-force attempt.
+
+Challenge 3:
+
+In Prometheus: up
+
+up{instance="otel-collector:8889", job="otel-collector"}	1
+
+After using command in Terminal:
+
+./scripts/command_replay_sender.sh test operator STATUS
+
+In Grafana -> Tempo: {resource.service.name="mission-orion"}
+
+ba1eb21b9a84b8235e3c7d227261f4ea
+2026-05-26 13:13:38
+mission-orion
+STATUS
+5 ms
+
+The telemetry data still flows through the pipeline perfectly. 
+Only the application subsystem (command-service) failed, while the observability infrastructure remained healthy.
