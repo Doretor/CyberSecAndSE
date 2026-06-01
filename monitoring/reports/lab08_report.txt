@@ -1,0 +1,189 @@
+Challenge 1:
+
+docker stats
+
+CONTAINER ID   NAME                CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O     PIDS 
+cee48c86bab8   otel-collector      0.11%     35.86MiB / 31.11GiB   0.11%     40kB / 16.6kB     0B / 0B       21 
+74a5c0aed02c   promtail            0.95%     26.39MiB / 31.11GiB   0.08%     29.9kB / 212kB    0B / 127kB    17 
+a321442dfb38   telemetry-service   0.38%     1.914MiB / 31.11GiB   0.01%     9.91kB / 126B     0B / 0B       2 
+3607b013d7fe   command-service     0.00%     952KiB / 31.11GiB     0.00%     3.01MB / 10.7kB   0B / 201kB    2 
+7be99d73681f   tempo               0.34%     28.43MiB / 31.11GiB   0.09%     9.87kB / 126B     0B / 24.6kB   24 
+fd417e62514b   prometheus          0.00%     19.27MiB / 31.11GiB   0.06%     26.4kB / 30.7kB   0B / 45.1kB   18 
+b63af497e9a5   grafana             1.00%     127MiB / 31.11GiB     0.40%     22.4MB / 95.6kB   0B / 124MB    47 
+8d19f828365a   loki                0.50%     43.11MiB / 31.11GiB   0.14%     222kB / 20.6kB    0B / 565kB    25
+
+Operators can mitigate this by manually killing the problematic process (e.g., using killall command) 
+or by setting strict CPU and memory limits in the docker-compose.yml file to prevent one container from crashing the host.
+
+Challenge 2:
+
+In Grafana: {job="docker"} |= "admin"
+
+2026-05-26 13:07:44.572 {
+  "log": "USER=intruder;ROLE=admin;CMD=SHUTDOWN\n",
+  "stream": "stdout",
+  "time": "2026-05-26T11:07:44.539435236Z"
+} 
+
+2026-05-26 13:07:44.572 {
+  "log": "USER=intruder;ROLE=admin;CMD=SHUTDOWN\n",
+  "stream": "stdout",
+  "time": "2026-05-26T11:07:44.331149428Z"
+} 
+
+2026-05-26 13:07:44.321 {
+  "log": "USER=intruder;ROLE=admin;CMD=SHUTDOWN\n",
+  "stream": "stdout",
+  "time": "2026-05-26T11:07:44.122327246Z"
+}
+
+Repeated malicious behavior occurred. 
+The logs show that the SHUTDOWN command was executed 20 times in a very short period (every 0.2 seconds). 
+This high frequency strongly indicates an automated script attack or a brute-force attempt.
+
+Challenge 3:
+
+In Prometheus: up
+
+up{instance="otel-collector:8889", job="otel-collector"}	1
+
+After using command in Terminal:
+
+./scripts/command_replay_sender.sh test operator STATUS
+
+In Grafana -> Tempo: {resource.service.name="mission-orion"}
+
+ba1eb21b9a84b8235e3c7d227261f4ea
+2026-05-26 13:13:38
+mission-orion
+STATUS
+5 ms
+
+The telemetry data still flows through the pipeline perfectly. 
+Only the application subsystem (command-service) failed, while the observability infrastructure remained healthy.
+
+Challenge 4:
+
+In Grafana -> Tempo: {resource.service.name="mission-orion"}
+
+14e14895c36d8e9ee2f03f1c6b8fba64
+2026-06-01 18:21:47.500
+mission-orion
+STATUS
+5 ms
+Span ID
+Start time
+service.name
+Duration
+98adb9e5c06e8a16
+2026-06-01 18:21:47
+mission-orion
+5 ms
+
+132b27e853c03cb858f6ce13ebe14936
+2026-06-01 18:21:38.343
+mission-orion
+SHUTDOWN
+5 ms
+Span ID
+Start time
+service.name
+Duration
+f765623119eb681f
+2026-06-01 18:21:38
+mission-orion
+5 ms
+
+Conclusion: By using Tempo and TraceQL, I was able to correlate command names with timestamps and execution duration. 
+The presence of these detailed spans confirms that the distributed telemetry collection is successful.
+
+Challenge 5:
+
+nc -zv 127.0.0.1 6004
+Connection to 127.0.0.1 6004 port [tcp/x11-4] succeeded!
+
+docker ps
+CONTAINER ID   IMAGE                                         COMMAND                  CREATED          STATUS          PORTS                                                                                                           NAMES
+4b2c21ee8db1   otel/opentelemetry-collector-contrib:latest   "/otelcol-contrib --…"   14 minutes ago   Up 14 minutes   0.0.0.0:4318->4318/tcp, [::]:4318->4318/tcp, 4317/tcp, 55679/tcp, 0.0.0.0:8889->8889/tcp, [::]:8889->8889/tcp   otel-collector
+1d557e78d3bb   grafana/promtail:latest                       "/usr/bin/promtail -…"   14 minutes ago   Up 14 minutes                                                                                                                   promtail
+64d2aa72eb9b   alpine:latest                                 "/bin/sh /app/teleme…"   14 minutes ago   Up 14 minutes                                                                                                                   telemetry-service
+daba888d60c2   alpine:latest                                 "sh -c ' apk add --n…"   14 minutes ago   Up 14 minutes   0.0.0.0:6004->6004/tcp, [::]:6004->6004/tcp                                                                     command-service
+0e2eac0ce4c8   grafana/tempo:latest                          "/tempo -config.file…"   14 minutes ago   Up 14 minutes   0.0.0.0:3200->3200/tcp, [::]:3200->3200/tcp                                                                     tempo
+406aa852cc49   prom/prometheus:latest                        "/bin/prometheus --c…"   14 minutes ago   Up 14 minutes   0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp                                                                     prometheus
+8bfe8da33125   grafana/grafana:latest                        "/run.sh"                14 minutes ago   Up 14 minutes   0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp                                                                     grafana
+eba6fe073c70   grafana/loki:2.9.2                            "/usr/bin/loki -conf…"   14 minutes ago   Up 14 minutes   0.0.0.0:3100->3100/tcp, [::]:3100->3100/tcp                                                                     loki
+
+In Prometheus: up
+
+up{instance="otel-collector:8889", job="otel-collector"}
+
+In Grafana -> Tempo: {resource.service.name="mission-orion"}
+
+14e14895c36d8e9ee2f03f1c6b8fba64
+2026-06-01 18:21:47.500
+mission-orion
+STATUS
+5 ms
+Span ID
+Start time
+service.name
+Duration
+98adb9e5c06e8a16
+2026-06-01 18:21:47
+mission-orion
+5 ms
+
+132b27e853c03cb858f6ce13ebe14936
+2026-06-01 18:21:38.343
+mission-orion
+SHUTDOWN
+5 ms
+Span ID
+Start time
+service.name
+Duration
+f765623119eb681f
+2026-06-01 18:21:38
+mission-orion
+5 ms
+
+
+Conclusion: Observability tools allowed me to verify system health across multiple layers (infrastructure, network, and application). 
+The service accepts commands and generates logs normally, proving it is fully operational, not degraded.
+
+Final Questions:
+
+1. Why is observability different from simple logging?
+Simple logging is just the passive emission of text records. 
+Observability is a systemic property—the ability to understand the internal state of a complex system based purely on its external outputs 
+by combining logs, metrics, and distributed traces into one unified context.
+
+2. Why are metrics important in mission operations?
+Metrics are computationally lightweight. They allow operators to monitor real-time trends (like CPU/Memory usage) 
+and set up automated alerts without having to parse and search through terabytes of heavy log text.
+
+3. Why are logs alone insufficient?
+Logs lack cross-service context. In a highly distributed architecture, a single request might hit 10 microservices, 
+making it impossible to follow the path using only text logs. 
+Additionally, storing logs for every single microsecond of a space mission would overwhelm storage capacity.
+
+4. What information do traces provide?
+Traces show the exact lifecycle and path of a single request across multiple distributed nodes, 
+explicitly measuring the latency (execution duration) at each specific step.
+
+5. What is a span?
+A span is the fundamental building block of a trace. It represents a single, logical unit of work (e.g., a database query or an HTTP response) 
+and contains a start time, end time, and a unique Span ID.
+
+6. How can OpenTelemetry correlate logs, metrics, and traces?
+OpenTelemetry uses "Context Propagation". It injects a unique Trace ID into every request. 
+This ID is then stamped onto all logs and metrics associated with that request, 
+allowing an operator to click on an error log and instantly see the exact trace timeline.
+
+7. How can observability help detect cyberattacks?
+It exposes hidden anomalies. CPU metrics can reveal cryptomining malware or DoS attacks, 
+while correlated logs can expose repeated brute-force administrative commands (like SHUTDOWN) coming from a single compromised account or IP.
+
+8. Why is incident correlation important in distributed systems?
+In distributed microservices, a failure in Service A is often just a symptom of Service C crashing. 
+Correlation helps engineers instantly separate the root cause from the side effects, drastically reducing the mean time to recovery.
